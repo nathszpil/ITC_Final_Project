@@ -3,6 +3,7 @@ import os
 import base64
 from requests import post, get
 import json
+from download_img import *
 
 load_dotenv()
 client_id = os.getenv("CLIENT_ID")
@@ -49,6 +50,7 @@ def get_songs_by_artist(token, artist_id):
     json_result = json.loads(result.content)['tracks']
     return json_result
 
+
 def get_albums_by_artist(token, artist_id):
     url = f"https://api.spotify.com/v1/artists/{artist_id}/albums"
     headers = get_auth_header(token)
@@ -57,13 +59,20 @@ def get_albums_by_artist(token, artist_id):
     return json_result
 
 
-token = get_token()
-result = search_for_artist(token, "Mac Miller")
-artist_id = result["id"]
-print(artist_id)
+def get_album_infos(token, album_id):
+    url = f"https://api.spotify.com/v1/albums/{album_id}"
+    headers = get_auth_header(token)
+    result = get(url, headers=headers)
+    json_result = json.loads(result.content)
+    return json_result
 
-albums = get_albums_by_artist(token, artist_id)
-for album in albums:
-    print(album['name'] + " " + album['id'])
+def download_albums_by_artist(token, artist_id, directory):
+    albums = get_albums_by_artist(token, artist_id)
+    for album in albums:
+        album_id = album['id']
+        album_info = get_album_infos(token, album_id)
+        album_name = album_info['name']
+        image_url = album_info['images'][0]['url']  # Get the URL of the first image (largest size)
+        download_image(image_url, 'images', f"{album_name}.jpg")
 
 
